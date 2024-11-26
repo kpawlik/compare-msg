@@ -144,7 +144,7 @@ func main() {
 		}
 	}
 	for _, namespace := range sourceMap.Keys{
-		sourceTranslation := sourceMap.Map[namespace]
+		sourceTranslation := sourceMap.Map[namespace]	
 		destTranslation := destMap.Map[namespace]
 		if (destTranslation != nil){
 			destSubMap, _ = destTranslation.(*om.OrderedMap)	
