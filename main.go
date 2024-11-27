@@ -72,9 +72,6 @@ func (c *CSV) getTranslation(namespace, key string, col int) (translation string
 		csvNS := parts[0]
 		csvKey := parts[1]
 		if namespace == csvNS && key == csvKey{
-			if len(row) -1 < col{
-				continue
-			}
 			translation = row[col]
 			return
 		}
@@ -149,10 +146,9 @@ func main() {
 		if (destTranslation != nil){
 			destSubMap, _ = destTranslation.(*om.OrderedMap)	
 		}else{
-			destSubMap = om.NewOrderedMap()
+			destSubMap = destMap.CreateChild(namespace)
 		}
 		sourceSubMap, _ = sourceTranslation.(*om.OrderedMap)
-		
 		for _, messageId := range sourceSubMap.Keys{
 			v2 := destSubMap.Map[messageId]
 			if v2 != nil || csvTr == nil{
@@ -168,4 +164,5 @@ func main() {
 	if err = writeOut(destMap); err != nil{
 		log.Panic(err)
 	}
+
 }
