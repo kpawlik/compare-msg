@@ -14,19 +14,19 @@ type Translation interface {
 	GetTranslations() [][]string
 }
 
-type CSV struct {
+type CSVTranslation struct {
 	file string
 	rows [][]string
 }
 
-func NewCSV(file string) *CSV {
-	return &CSV{
+func NewCSV(file string) *CSVTranslation {
+	return &CSVTranslation{
 		file: file,
 		rows: make([][]string, 0),
 	}
 }
 
-func (c *CSV) Read() (err error) {
+func (c *CSVTranslation) Read() (err error) {
 	var (
 		f   *os.File
 		row []string
@@ -46,7 +46,7 @@ func (c *CSV) Read() (err error) {
 	return
 }
 
-func (c *CSV) GetTranslation(namespace, key string, col int) (translation string, err error) {
+func (c *CSVTranslation) GetTranslation(namespace, key string, col int) (translation string, err error) {
 	for _, row := range c.rows {
 		col1 := row[0]
 		parts := strings.Split(col1, ".")
@@ -62,7 +62,7 @@ func (c *CSV) GetTranslation(namespace, key string, col int) (translation string
 }
 
 
-func (c *CSV) GetTranslations() (res [][]string){
+func (c *CSVTranslation) GetTranslations() (res [][]string){
 	for _, row := range c.rows {
 		col1 := row[0]
 		parts := strings.Split(col1, ".")

@@ -3,7 +3,7 @@ module github.com/kpawlik/compare_msg
 go 1.23
 
 require (
-	github.com/kpawlik/om v0.0.0-20241127104708-10c95a6b2933
+	github.com/kpawlik/om v0.1.0
 	github.com/spf13/cobra v1.8.1
 )
 
