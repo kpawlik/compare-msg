@@ -95,3 +95,84 @@ func CompareUpdate(baseFile, messageFile, translationFilePath, outFile string, o
 	}
 	return
 }
+
+
+func Compare(baseFile, messageFile string) (err error){
+	var (
+		sourceSubMap, destSubMap *om.OrderedMap
+		sourceMap, destMap *om.OrderedMap
+	)
+	
+	if sourceMap, err = readMessageFile(baseFile); err != nil{
+		return
+	}
+	if destMap, err = readMessageFile(messageFile); err != nil{
+		return
+	}
+	
+	for _, namespace := range sourceMap.Keys{
+		sourceTranslation := sourceMap.Map[namespace]	
+		destTranslation := destMap.Map[namespace]
+		if (destTranslation != nil){
+			destSubMap, _ = destTranslation.(*om.OrderedMap)	
+		}else{
+			destSubMap = destMap.CreateChild(namespace)
+		}
+		sourceSubMap, _ = sourceTranslation.(*om.OrderedMap)
+		for _, messageId := range sourceSubMap.Keys{
+			currentTranslation := destSubMap.Map[messageId]
+			if currentTranslation == nil{
+				fmt.Printf("missing translation for %s.%s\n", namespace, messageId)
+				continue
+			}
+		}
+	}
+	return
+}
+
+func Update(baseFile, translationFilePath, outFile string, overwrite bool, force bool) (err error){
+	var (
+		translationFile Translation
+		sourceSubMap *om.OrderedMap
+		sourceMap *om.OrderedMap
+
+	)
+	
+	if sourceMap, err = readMessageFile(baseFile); err != nil{
+		return
+	}
+	
+	translationFile = NewCSV(translationFilePath)
+	if err = translationFile.Read(); err != nil{
+		err = fmt.Errorf("error reading translation file  %s, %w", translationFilePath, err)
+		return
+	}
+	translations := translationFile.GetTranslations()
+	for _, translation := range translations{
+		namespace := translation[0]
+		messageId := translation[1]
+		message := translation[2]
+		sourceTranslation := sourceMap.Map[namespace]	
+		if sourceTranslation == nil{
+			sourceSubMap = sourceMap.CreateChild(namespace)
+		}else{
+			sourceSubMap = sourceTranslation.(*om.OrderedMap)
+		}
+		currentTranslation := sourceSubMap.Map[messageId]
+		if currentTranslation == nil{
+			fmt.Printf("%s.%s added\n", namespace, messageId)
+			sourceSubMap.Map[messageId] = message
+			sourceSubMap.Keys = append(sourceSubMap.Keys, messageId)
+		}else{
+			if force{
+				fmt.Printf("%s.%s updates\n", namespace, messageId)
+				sourceSubMap.Map[messageId] = message
+			}
+		}
+	}
+	if err = writeOut(sourceMap, outFile, overwrite); err != nil{
+		return
+	}
+	return
+	
+}

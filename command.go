@@ -16,10 +16,7 @@ var compare = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		baseFile, _ := cmd.Flags().GetString("base-file")
 		messageFile, _ := cmd.Flags().GetString("message-file")
-		translationFile := ""
-		outFile := ""
-		overwrite := false
-		if err := CompareUpdate(baseFile, messageFile, translationFile, outFile, overwrite); err != nil {
+		if err := Compare(baseFile, messageFile); err != nil {
 			fmt.Println(err)
 		}
 	},
@@ -29,7 +26,14 @@ var update = &cobra.Command{
 	Use:   "update",
 	Short: "Update message file from translation",
 	Run: func(cmd *cobra.Command, args []string) {
-
+		baseFile, _ := cmd.Flags().GetString("base-file")
+		translationFile, _ := cmd.Flags().GetString("translation-file")
+		outFile, _ := cmd.Flags().GetString("out-file")
+		overwrite, _ := cmd.Flags().GetBool("overwrite")
+		force, _ := cmd.Flags().GetBool("force")
+		if err := Update(baseFile, translationFile, outFile, overwrite, force); err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
@@ -56,6 +60,7 @@ func init() {
 	rootCmd.PersistentFlags().String("message-file", "", "Message file")
 	compare.Flags().String("base-file", "", "Base file")
 	update.Flags().String("translation-file", "", "Translation file")
+	update.Flags().Bool("force", false, "Force update translation")
 	compareUpdate.Flags().String("translation-file", "", "Translation file")
 	compareUpdate.Flags().String("base-file", "", "Base file")
 	compareUpdate.Flags().String("out-file", "", "Output file")

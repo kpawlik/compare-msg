@@ -11,6 +11,7 @@ import (
 type Translation interface {
 	Read() error
 	GetTranslation(string, string, int) (string, error)
+	GetTranslations() [][]string
 }
 
 type CSV struct {
@@ -57,5 +58,18 @@ func (c *CSV) GetTranslation(namespace, key string, col int) (translation string
 		}
 	}
 	err = fmt.Errorf("missing translation for %s.%s", namespace, key)
+	return
+}
+
+
+func (c *CSV) GetTranslations() (res [][]string){
+	for _, row := range c.rows {
+		col1 := row[0]
+		parts := strings.Split(col1, ".")
+		namespace := parts[0]
+		messageId := parts[1]
+		message := row[3]
+		res = append(res, []string{namespace, messageId, message})
+	}
 	return
 }
