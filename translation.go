@@ -10,19 +10,21 @@ import (
 
 type Translation interface {
 	Read() error
-	GetTranslation(string, string, int) (string, error)
+	GetTranslation(string, string) (string, error)
 	GetTranslations() [][]string
 }
 
 type CSVTranslation struct {
 	file string
 	rows [][]string
+	translationColumn int
 }
 
 func NewCSV(file string) *CSVTranslation {
 	return &CSVTranslation{
 		file: file,
 		rows: make([][]string, 0),
+		translationColumn: 2,
 	}
 }
 
@@ -46,14 +48,11 @@ func (c *CSVTranslation) Read() (err error) {
 	return
 }
 
-func (c *CSVTranslation) GetTranslation(namespace, key string, col int) (translation string, err error) {
+func (c *CSVTranslation) GetTranslation(namespace, key string) (translation string, err error) {
+	nsMessageId := fmt.Sprintf("%s.%s", namespace, key)
 	for _, row := range c.rows {
-		col1 := row[0]
-		parts := strings.Split(col1, ".")
-		csvNS := parts[0]
-		csvKey := parts[1]
-		if namespace == csvNS && key == csvKey {
-			translation = row[col]
+		if row[0] == nsMessageId{
+			translation = row[c.translationColumn]
 			return
 		}
 	}
@@ -63,13 +62,13 @@ func (c *CSVTranslation) GetTranslation(namespace, key string, col int) (transla
 
 
 func (c *CSVTranslation) GetTranslations() (res [][]string){
-	for _, row := range c.rows {
-		col1 := row[0]
-		parts := strings.Split(col1, ".")
-		namespace := parts[0]
-		messageId := parts[1]
-		message := row[3]
-		res = append(res, []string{namespace, messageId, message})
+	res = make([][]string, len(c.rows))
+	for i, row := range c.rows {
+		nsMessageId := row[0]
+		parts := strings.Split(nsMessageId, ".")
+		namespace, messageId  := parts[0], parts[1]
+		message := row[c.translationColumn]
+		res[i] = []string{namespace, messageId, message}
 	}
 	return
 }

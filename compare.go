@@ -44,7 +44,38 @@ func writeOut(destMap *om.OrderedMap, outFile string, overwrite bool) (err error
 	return
 }
 
-func CompareUpdate(baseFile, messageFile, translationFilePath, outFile string, overwrite bool) (err error) {
+func Compare(baseFile, messageFile string) (err error) {
+	var (
+		sourceSubMap, destSubMap *om.OrderedMap
+		sourceMap, destMap       *om.OrderedMap
+	)
+	if sourceMap, err = readMessageFile(baseFile); err != nil {
+		return
+	}
+	if destMap, err = readMessageFile(messageFile); err != nil {
+		return
+	}
+	for _, namespace := range sourceMap.Keys {
+		sourceTranslation := sourceMap.Map[namespace]
+		destTranslation := destMap.Map[namespace]
+		if destTranslation != nil {
+			destSubMap, _ = destTranslation.(*om.OrderedMap)
+		} else {
+			destSubMap = destMap.CreateChild(namespace)
+		}
+		sourceSubMap, _ = sourceTranslation.(*om.OrderedMap)
+		for _, messageId := range sourceSubMap.Keys {
+			_, ok := destSubMap.Map[messageId]
+			if !ok {
+				fmt.Printf("missing translation for %s.%s\n", namespace, messageId)
+				continue
+			}
+		}
+	}
+	return
+}
+
+func CompareUpdate(baseFile, messageFile, translationFilePath, outFile string, overwrite bool, force bool) (err error) {
 	var (
 		translationFile          Translation
 		sourceSubMap, destSubMap *om.OrderedMap
@@ -75,53 +106,24 @@ func CompareUpdate(baseFile, messageFile, translationFilePath, outFile string, o
 		}
 		sourceSubMap, _ = sourceTranslation.(*om.OrderedMap)
 		for _, messageId := range sourceSubMap.Keys {
-			currentTranslation := destSubMap.Map[messageId]
-			if currentTranslation == nil && translationFile == nil {
-				fmt.Printf("missing translation for %s.%s\n", namespace, messageId)
+			_, ok := destSubMap.Map[messageId]
+			if ok && !force {
 				continue
 			}
-			if currentTranslation != nil || translationFile == nil {
-				continue
-			}
-			if translation, err = translationFile.GetTranslation(namespace, messageId, 2); err != nil {
+			if translation, err = translationFile.GetTranslation(namespace, messageId); err != nil {
 				fmt.Println(err)
+				continue
+			}
+			if !ok{
+				fmt.Printf("%s.%s added\n", namespace, messageId)
+			}else{
+				fmt.Printf("%s.%s updated\n", namespace, messageId)
 			}
 			destSubMap.Set(messageId, translation)
 		}
 	}
 	if err = writeOut(destMap, outFile, overwrite); err != nil {
 		return
-	}
-	return
-}
-
-func Compare(baseFile, messageFile string) (err error) {
-	var (
-		sourceSubMap, destSubMap *om.OrderedMap
-		sourceMap, destMap       *om.OrderedMap
-	)
-	if sourceMap, err = readMessageFile(baseFile); err != nil {
-		return
-	}
-	if destMap, err = readMessageFile(messageFile); err != nil {
-		return
-	}
-	for _, namespace := range sourceMap.Keys {
-		sourceTranslation := sourceMap.Map[namespace]
-		destTranslation := destMap.Map[namespace]
-		if destTranslation != nil {
-			destSubMap, _ = destTranslation.(*om.OrderedMap)
-		} else {
-			destSubMap = destMap.CreateChild(namespace)
-		}
-		sourceSubMap, _ = sourceTranslation.(*om.OrderedMap)
-		for _, messageId := range sourceSubMap.Keys {
-			currentTranslation := destSubMap.Map[messageId]
-			if currentTranslation == nil {
-				fmt.Printf("missing translation for %s.%s\n", namespace, messageId)
-				continue
-			}
-		}
 	}
 	return
 }
@@ -153,12 +155,12 @@ func Update(baseFile, translationFilePath, outFile string, overwrite bool, force
 		}
 		_, ok = sourceSubMap.Map[messageId]
 		if !ok {
-			fmt.Printf("%s.%s added\n", namespace, messageId)
 			sourceSubMap.Set(messageId, message)
+			fmt.Printf("%s.%s added\n", namespace, messageId)
 		} else {
 			if force {
-				fmt.Printf("%s.%s updates\n", namespace, messageId)
 				sourceSubMap.Set(messageId, message)
+				fmt.Printf("%s.%s updated\n", namespace, messageId)
 			}
 		}
 	}
